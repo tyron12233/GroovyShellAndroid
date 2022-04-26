@@ -1,0 +1,15 @@
+plugins {
+    id 'java-library'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+dependencies {
+    implementation 'org.codehaus.groovy:groovy:3.0.7:grooid'
+    implementation 'com.linkedin.dexmaker:dexmaker:2.28.1'
+
+    implementation 'com.android.tools:r8:3.3.28'
+}
