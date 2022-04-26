@@ -8,6 +8,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
+    //language=Groovy
+    private static final String SAMPLE_SCRIPT = "println \"Hello World!\"";
+
     @RequiresApi(api = Build.VERSION_CODES.O_MR1)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -15,6 +18,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         GrooidShell grooidShell = new GrooidShell(getClassLoader());
-        grooidShell.evaluate("println \"Hello world\"");
+        grooidShell.evaluate(SAMPLE_SCRIPT);
+
+
     }
 }
