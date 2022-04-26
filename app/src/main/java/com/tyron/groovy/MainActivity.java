@@ -15,6 +15,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         GrooidShell grooidShell = new GrooidShell(getClassLoader());
-        grooidShell.evaluate("println \"Hello world!\"");
+        Object result = grooidShell.evaluate("return { }");
+        System.out.println(result);
     }
 }

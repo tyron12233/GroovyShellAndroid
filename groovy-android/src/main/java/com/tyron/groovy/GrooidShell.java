@@ -35,7 +35,7 @@ public class GrooidShell {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O_MR1)
-    public void evaluate(String scriptText) {
+    public Object evaluate(String scriptText) {
         D8Command.Builder builder = D8Command.builder();
         builder.setDisableDesugaring(true);
         builder.setMinApiLevel(26);
@@ -77,12 +77,14 @@ public class GrooidShell {
                 Script script;
                 try {
                     script = (Script) scriptClass.newInstance();
-                    script.run();
+                    return script.run();
                 } catch (IllegalAccessException | InstantiationException e) {
                     e.printStackTrace();
                 }
             }
         }
+
+        return null;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O_MR1)
