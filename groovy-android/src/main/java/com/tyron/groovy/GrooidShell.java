@@ -19,13 +19,13 @@ import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import dalvik.system.InMemoryDexClassLoader;
 import groovy.lang.GrooidClassLoader;
 import groovy.lang.Script;
 
+// TODO: Handle API 26, rethrow exceptions instead of swallowing them
 public class GrooidShell {
 
     private final ClassLoader classLoader;

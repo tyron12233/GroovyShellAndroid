@@ -1,10 +1,10 @@
 package com.tyron.groovy;
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Build;
 import android.os.Bundle;
+
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -15,7 +15,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         GrooidShell grooidShell = new GrooidShell(getClassLoader());
-        Object result = grooidShell.evaluate("return { }");
-        System.out.println(result);
+        grooidShell.evaluate("println \"Hello world\"");
     }
 }
