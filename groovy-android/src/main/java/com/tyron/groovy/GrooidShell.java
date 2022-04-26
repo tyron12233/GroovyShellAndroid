@@ -25,7 +25,8 @@ import dalvik.system.InMemoryDexClassLoader;
 import groovy.lang.GrooidClassLoader;
 import groovy.lang.Script;
 
-// TODO: Handle API 26, rethrow exceptions instead of swallowing them
+// TODO: Handle API 26
+@RequiresApi(api = Build.VERSION_CODES.O_MR1)
 public class GrooidShell {
 
     private final ClassLoader classLoader;
@@ -34,13 +35,21 @@ public class GrooidShell {
         this.classLoader = classLoader;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O_MR1)
-    public Object evaluate(String scriptText) {
+    @SuppressWarnings("UnusedReturnValue")
+    public Result evaluate(String scriptText) {
+        try {
+            return evaluateInternal(scriptText);
+        } catch (CompilationFailedException e) {
+            return Result.failed(e);
+        }
+    }
+
+    private Result evaluateInternal(String scriptText) throws CompilationFailedException {
         D8Command.Builder builder = D8Command.builder();
         builder.setDisableDesugaring(true);
         builder.setMinApiLevel(26);
 
-        final Set<String> classNames = new LinkedHashSet<>();
+        Set<String> classNames = new LinkedHashSet<>();
         CompilerConfiguration config = new CompilerConfiguration();
         config.setBytecodePostprocessor((name, original) -> {
             builder.addClassProgramData(original, Origin.unknown());
@@ -51,9 +60,25 @@ public class GrooidShell {
         GrooidClassLoader gcl = new GrooidClassLoader(classLoader, config);
         gcl.parseClass(scriptText);
 
-        final ByteBuffer[] byteBuffer = new ByteBuffer[1];
+        ByteBuffer[] byteBuffer = getTransformedDexByteBufferArray(builder);
+        Map<String, Class<?>> classes = defineDynamic(classNames, byteBuffer);
+        for (Class<?> scriptClass : classes.values()) {
+            if (Script.class.isAssignableFrom(scriptClass)) {
+                try {
+                    Script script = (Script) scriptClass.newInstance();
+                    return Result.success(script.run());
+                } catch (IllegalAccessException | InstantiationException e) {
+                    return Result.failed(e);
+                }
+            }
+        }
 
-        builder.setProgramConsumer(new DexIndexedConsumer() {
+        return Result.failed(new IllegalArgumentException("Un-parsable argument provided."));
+    }
+
+    private ByteBuffer[] getTransformedDexByteBufferArray(D8Command.Builder commandBuilder) throws CompilationFailedException {
+        final ByteBuffer[] byteBuffer = new ByteBuffer[1];
+        commandBuilder.setProgramConsumer(new DexIndexedConsumer() {
             @Override
             public void finished(DiagnosticsHandler diagnosticsHandler) {
 
@@ -64,27 +89,8 @@ public class GrooidShell {
                 byteBuffer[0] = ByteBuffer.wrap(data.getBuffer());
             }
         });
-
-        try {
-            D8.run(builder.build());
-        } catch (CompilationFailedException e) {
-            e.printStackTrace();
-        }
-
-        Map<String, Class<?>> classes = defineDynamic(classNames, byteBuffer);
-        for (Class<?> scriptClass : classes.values()) {
-            if (Script.class.isAssignableFrom(scriptClass)) {
-                Script script;
-                try {
-                    script = (Script) scriptClass.newInstance();
-                    return script.run();
-                } catch (IllegalAccessException | InstantiationException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        return null;
+        D8.run(commandBuilder.build());
+        return byteBuffer;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O_MR1)
@@ -99,5 +105,38 @@ public class GrooidShell {
             Log.e("DynamicLoading", "Unable to load class", e);
         }
         return result;
+    }
+
+    @SuppressWarnings("unused")
+    public static class Result {
+
+        public static Result failed(Throwable failure) {
+            return new Result(null, failure);
+        }
+
+        public static Result success(Object result) {
+            return new Result(result, null);
+        }
+
+        private final Throwable failure;
+
+        private final Object result;
+
+        private Result(Object result, Throwable failure) {
+            this.result = result;
+            this.failure = failure;
+        }
+
+        public boolean isSuccessful() {
+            return failure != null;
+        }
+
+        public Throwable getFailure() {
+            return failure;
+        }
+
+        public Object getResult() {
+            return result;
+        }
     }
 }
